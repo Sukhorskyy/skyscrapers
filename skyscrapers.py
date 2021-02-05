@@ -1,7 +1,7 @@
 '''
 Skyscrapers game
 The module checks whether the entered combination is winning
-Repository address on GitHub:
+Repository address on GitHub: https://github.com/Sukhorskyy/skyscrapers.git
 '''
 
 def read_input(path: str):
