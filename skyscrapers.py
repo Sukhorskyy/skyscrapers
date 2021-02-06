@@ -8,11 +8,8 @@ def read_input(path: str):
     """
     Read game board file from path.
     Return list of str.
-
-    >>> read_input("check.txt")
-    ['***21**', '412453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***']
     """
-    with open('check.txt', mode='r', encoding='utf-8') as data:
+    with open(path, mode='r', encoding='utf-8') as data:
         content = data.readlines()
     for i in range(len(content)):
         content[i] = content[i].strip()
@@ -41,7 +38,7 @@ def left_to_right_check(input_line: str, pivot: int):
     for i in range(1, len(input_line)):
         if input_line[i] > max_el:
             counter = counter + 1
-        max_el = max(input_line[:i])
+        max_el = max(input_line[:i+1])
     if counter == pivot:
         return True
     else:
@@ -54,11 +51,14 @@ def check_not_finished_board(board: list):
 
     Return True if finished, False otherwise.
 
-    >>> check_not_finished_board(['***21**', '4?????*', '4?????*', '*?????5', '*?????*', '*?????*', '*2*1***'])
+    >>> check_not_finished_board(['***21**', '4?????*', '4?????*', '*?????5', \
+        '*?????*', '*?????*', '*2*1***'])
     False
-    >>> check_not_finished_board(['***21**', '412453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_not_finished_board(['***21**', '412453*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     True
-    >>> check_not_finished_board(['***21**', '412453*', '423145*', '*5?3215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_not_finished_board(['***21**', '412453*', '423145*', '*5?3215', \
+        '*35214*', '*41532*', '*2*1***'])
     False
     """
     board = board[1:-1]
@@ -78,11 +78,14 @@ def check_uniqueness_in_rows(board: list):
 
     Return True if buildings in a row have unique length, False otherwise.
 
-    >>> check_uniqueness_in_rows(['***21**', '412453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_uniqueness_in_rows(['***21**', '412453*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     True
-    >>> check_uniqueness_in_rows(['***21**', '452453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_uniqueness_in_rows(['***21**', '452453*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     False
-    >>> check_uniqueness_in_rows(['***21**', '412453*', '423145*', '*553215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_uniqueness_in_rows(['***21**', '412453*', '423145*', '*553215', \
+        '*35214*', '*41532*', '*2*1***'])
     False
     """
     board = board[1:-1]
@@ -104,23 +107,32 @@ def check_horizontal_visibility(board: list):
      i.e., for line 412453* , hint is 4, and 1245 are the four buildings
       that could be observed from the hint looking to the right.
 
-    >>> check_horizontal_visibility(['***21**', '412453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_horizontal_visibility(['***21**', '412453*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     True
-    >>> check_horizontal_visibility(['***21**', '452453*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_horizontal_visibility(['***21**', '452453*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     False
-    >>> check_horizontal_visibility(['***21**', '452413*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
+    >>> check_horizontal_visibility(['***21**', '452413*', '423145*', '*543215', \
+        '*35214*', '*41532*', '*2*1***'])
     False
     """
+    reversed_board = [[0 for i in range(len(board))] for i in range(len(board))]
     for i in range(len(board)):
         if board[i][0] != '*':
             if left_to_right_check(board[i], int(board[i][0])) == False:
+                return False
+        if board[i][6] != '*':
+            reversed_board[i] = board[i][::-1]
+            if left_to_right_check(reversed_board[i], int(reversed_board[i][0])) == False:
                 return False
     return True
 
 
 def check_columns(board: list):
     """
-    Check column-wise compliance of the board for uniqueness (buildings of unique height) and visibility (top-bottom and vice versa).
+    Check column-wise compliance of the board for
+    uniqueness (buildings of unique height) and visibility (top-bottom and vice versa).
 
     Same as for horizontal cases, but aggregated in one function for vertical case, i.e. columns.
 
@@ -131,18 +143,20 @@ def check_columns(board: list):
     >>> check_columns(['***21**', '412553*', '423145*', '*543215', '*35214*', '*41532*', '*2*1***'])
     False
     """
-    board = board[1:-1]
     for i in range(len(board)):
-        board[i] = board[i][1:-1]
         board[i] = list(board[i])
     new_board = [[0 for i in range(len(board))] for i in range(len(board))]
     for i in range(len(board)):
         for j in range(len(board[i])):
             new_board[j][i] = board[i][j]
-    for i in range(len(new_board)):
-        board_set = set(new_board[i])
-        if len(new_board[i]) != len(board_set):
-            return False
+
+    uniqueness = check_uniqueness_in_rows(new_board)
+    if uniqueness == False:
+        return False
+
+    visability = check_horizontal_visibility(new_board)
+    if visability == False:
+        return False
     return True
 
 
@@ -151,19 +165,17 @@ def check_skyscrapers(input_path: str):
     Main function to check the status of skyscraper game board.
     Return True if the board status is compliant with the rules,
     False otherwise.
-
-    >>> check_skyscrapers("check.txt")
-    True
     """
     board = read_input(input_path)
     if check_not_finished_board(board) == True:
-        if (check_uniqueness_in_rows(board) == True) and \
-            (check_horizontal_visibility(board) == True) and \
-                (check_columns(board) == True):
-            return True
+        if check_uniqueness_in_rows(board) == False:
+            return False
+        if check_horizontal_visibility(board) == False:
+            return False
+        if check_columns(board) == False:
+            return False
+    return True
 
 
 if __name__ == "__main__":
     print(check_skyscrapers("check.txt"))
-    import doctest
-    doctest.testmod()
